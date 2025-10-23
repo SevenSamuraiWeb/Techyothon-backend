@@ -1,0 +1,61 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.pyo
+*.pyd
+*.env
+.env*
+venv/
+ENV/
+env/
+*.egg-info/
+dist/
+build/
+*.log
+*.sqlite3
+*.db
+
+# VS Code
+.vscode/
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# Misc
+.DS_Store
+*.bak
+*.swp
+*.swo
+
+# Pipenv
+Pipfile.lock
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# Test coverage
+htmlcov/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+test-results/
+
+# Pytest
+.pytest_cache/
+
+# mypy
+.mypy_cache/
+
+# Others
+*.pem
+*.crt
+*.key
+
+# Ignore secrets
+secrets.json
