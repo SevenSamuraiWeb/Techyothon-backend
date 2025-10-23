@@ -84,7 +84,7 @@ async def get_department_pending_complaints(dept_name: str):
     }
 
 
-@router.patch("/assign/{complaint_id}")
+@router.patch("/assign/{complaint_id:[0-9a-fA-F]{24}}")
 async def assign_complaint_to_department(
     complaint_id: str,
     assignment: DepartmentAssignment

@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 
 from database import connect_to_mongo, close_mongo_connection
-from middleware.cors import setup_cors
+from fastapi.middleware.cors import CORSMiddleware
 from config import get_settings
 
 # Import routers
@@ -38,7 +38,18 @@ app = FastAPI(
 )
 
 # Setup CORS
-setup_cors(app)
+origins = [
+    "http://localhost:3000",
+    "http://localhost:8080",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Include routers
 app.include_router(complaints.router)

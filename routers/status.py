@@ -9,7 +9,7 @@ from database import get_database
 router = APIRouter(prefix="/api/complaints", tags=["status"])
 
 
-@router.patch("/{complaint_id}/status")
+@router.patch("/{complaint_id:[0-9a-fA-F]{24}}/status")
 async def update_complaint_status(complaint_id: str, status_update: StatusUpdate):
     """
     Update the status of a complaint
@@ -61,7 +61,7 @@ async def update_complaint_status(complaint_id: str, status_update: StatusUpdate
     }
 
 
-@router.post("/{complaint_id}/verify")
+@router.post("/{complaint_id:[0-9a-fA-F]{24}}/verify")
 async def verify_resolution(complaint_id: str, verification: VerificationRequest):
     """
     Allow citizens to verify that their complaint has been resolved
@@ -118,7 +118,7 @@ async def verify_resolution(complaint_id: str, verification: VerificationRequest
     }
 
 
-@router.get("/{complaint_id}/history")
+@router.get("/{complaint_id:[0-9a-fA-F]{24}}/history")
 async def get_status_history(complaint_id: str):
     """
     Get the complete status history of a complaint

@@ -74,6 +74,7 @@ async def upload_image_bytes(image_bytes: bytes, mime_type: str = "image/jpeg") 
         print(f"Error uploading image bytes: {e}")
         return None
 
+
 async def delete_file(public_id: str, resource_type: str = "image") -> bool:
     """
     Delete a file from Cloudinary

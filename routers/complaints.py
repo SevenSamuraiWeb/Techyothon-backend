@@ -14,6 +14,35 @@ from services.similarity_service import check_duplicate
 
 router = APIRouter(prefix="/api/complaints", tags=["complaints"])
 
+@router.get("/all")
+async def get_all_complaints():
+    db = await get_database()
+    
+    complaints = await db.complaints.find().sort("created_at", -1).to_list(length=100)
+    
+    if not complaints:
+        raise HTTPException(status_code=404, detail="Complaints not found")
+    
+    # Convert ObjectId to string
+    submitted_list = []
+    for complaint in complaints:
+            submitted_list.append({
+                "complaint_id": str(complaint["_id"]),
+                "status": complaint.get("status"),
+                "category": complaint.get("category"),
+                "priority": complaint.get("priority"),
+                "title": complaint.get("title"),
+                "description": complaint.get("description"),
+                "created_at": complaint.get("created_at"),
+            })
+
+    if not submitted_list:
+        return {"total": 0, "complaints": []}
+
+    return {"total": len(submitted_list), "complaints": submitted_list}
+
+
+
 
 @router.post("/submit", response_model=ComplaintResponse)
 async def submit_complaint(
@@ -28,7 +57,7 @@ async def submit_complaint(
 ):
     """
     Submit a new complaint with multimodal input
-    Accepts: title, description, location, image (optional), audio (optional)
+    Accepts: title, description, location, image, audio (optional)
     """
     
     db = await get_database()
@@ -120,7 +149,7 @@ async def submit_complaint(
     )
 
 
-@router.get("/{complaint_id}")
+@router.get("/{complaint_id:[0-9a-fA-F]{24}}")
 async def get_complaint(complaint_id: str):
     """
     Get details of a specific complaint
@@ -169,7 +198,7 @@ async def get_user_complaints(user_id: str, status: Optional[str] = None):
     }
 
 
-@router.get("/{complaint_id}/similar")
+@router.get("/{complaint_id:[0-9a-fA-F]{24}}/similar")
 async def get_similar_complaints(complaint_id: str):
     """
     Find similar complaints to help identify duplicates
@@ -202,3 +231,60 @@ async def get_similar_complaints(complaint_id: str):
         "similar_complaints": similar
     }
 
+
+
+@router.post("/login")
+async def login(
+    email: str = Form(...),
+    password: str = Form(...),
+    role: str = Form(...)
+):
+    
+    db = await get_database()
+    complaints_collection = db["user"]
+    
+    
+    user_data = {
+        "email": email,
+        "password": password,
+        "role": role
+    }
+    
+    result = await complaints_collection.find_one({"email": user_data["email"]})
+    if result == None:
+        return { "verified": False, "type": "user not found" }
+    else:
+        # print(result["_id"])
+        if user_data["password"] == result["password"]:
+            return {"verified": True, "userid":str(result["_id"])}
+        else: return {"verified": False, "type": "wrong password"}
+
+
+
+@router.post("/register")
+async def register(
+    name: str = Form(...),
+    email: str = Form(...),
+    password: str = Form(...),
+    role: str = Form(...)
+):
+    
+    db = await get_database()
+    complaints_collection = db["user"]
+    
+    
+    user_data = {
+        "name": name,   
+        "email": email,
+        "password": password,
+        "role": role
+    }
+    
+    result = await complaints_collection.find_one({"email": user_data["email"]})
+    if result == None:
+        succ = await complaints_collection.insert_one(user_data)
+        if succ.inserted_id:
+            return {"success": True}
+        else: return {"success": False, "type": "Opps! Please Try again"}
+    else:
+        return {"success": False, "type": "User already exists"}
