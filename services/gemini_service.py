@@ -41,15 +41,8 @@ Respond in JSON format:
 """
     
     try:
-        # Prepare content parts
+        # Prepare content parts (URL-based image no longer used by default)
         content_parts = [prompt]
-        
-        # Add image if available
-        if image_url:
-            content_parts.append(types.Part.from_uri(
-                file_uri=image_url,
-                mime_type="image/jpeg"
-            ))
         
         # Call Gemini API
         response = client.models.generate_content(
@@ -82,6 +75,48 @@ Respond in JSON format:
         print(f"Error in Gemini categorization: {e}")
         # Return default values on error
         return ComplaintCategory.OTHER, Priority.MEDIUM
+
+
+async def categorize_complaint_with_image_bytes(title: str, description: str, image_bytes: bytes, mime_type: str = "image/jpeg"):
+    prompt = f"""
+Analyze this citizen complaint and provide:
+1. Category: Choose ONE from [pothole, garbage, streetlight, drainage, water_leakage, power_outage, other]
+2. Priority: Choose ONE from [low, medium, high, critical]
+
+Title: {title}
+Description: {description}
+
+Respond in JSON format:
+{{"category": "category_name", "priority": "priority_level"}}
+"""
+    parts = [prompt]
+    if image_bytes:
+        parts.append(types.Part.from_bytes(data=image_bytes, mime_type=mime_type))
+    response = client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=parts
+    )
+    # Parse response
+    response_text = response.text.strip()
+    
+    # Extract JSON from response (handling markdown code blocks)
+    if "```json" in response_text:
+        response_text = response_text.split("```json")[1].split("```")[0].strip()
+    elif "```" in response_text:
+        response_text = response_text.split("```")[1].split("```")[0].strip()
+    
+    result = json.loads(response_text or "{}")
+    
+    # Map to enums
+    category_str = result.get("category", "other").lower()
+    priority_str = result.get("priority", "medium").lower()
+    
+    # Convert to enum values
+    category = ComplaintCategory(category_str) if category_str in [c.value for c in ComplaintCategory] else ComplaintCategory.OTHER
+    priority = Priority(priority_str) if priority_str in [p.value for p in Priority] else Priority.MEDIUM
+    
+    return category, priority
+        
 
 
 async def analyze_with_audio(

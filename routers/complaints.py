@@ -8,8 +8,8 @@ from models import (
     StatusHistory, CATEGORY_DEPARTMENT_MAP
 )
 from database import get_database
-from services.cloudinary_service import upload_image, upload_audio
-from services.gemini_service import categorize_complaint
+from services.cloudinary_service import upload_image, upload_audio, upload_image_bytes
+from services.gemini_service import categorize_complaint, categorize_complaint_with_image_bytes
 from services.similarity_service import check_duplicate
 
 router = APIRouter(prefix="/api/complaints", tags=["complaints"])
@@ -34,18 +34,28 @@ async def submit_complaint(
     db = await get_database()
     complaints_collection = db["complaints"]
     
-    # Upload files to Cloudinary
+    # Handle media and AI categorization
     image_url = None
     audio_url = None
-    
+    image_bytes = None
+    mime_type = "image/jpeg"
+
+    # If image present, read once as bytes (for Gemini) and upload to Cloudinary
     if image:
-        image_url = await upload_image(image)
-    
+        image_bytes = await image.read()
+        if image.content_type:
+            mime_type = image.content_type
+        # Categorize using bytes to avoid unsupported external URLs
+        category, priority = await categorize_complaint_with_image_bytes(title, description, image_bytes, mime_type)
+        # Upload to Cloudinary using the same bytes
+        image_url = await upload_image_bytes(image_bytes, mime_type)
+    else:
+        # No image: categorize using text only
+        category, priority = await categorize_complaint(title, description, None)
+
+    # Upload audio if provided
     if audio:
         audio_url = await upload_audio(audio)
-    
-    # Use Gemini AI to categorize the complaint
-    category, priority = await categorize_complaint(title, description, image_url)
     
     # Auto-assign to department based on category
     assigned_department = CATEGORY_DEPARTMENT_MAP.get(category)

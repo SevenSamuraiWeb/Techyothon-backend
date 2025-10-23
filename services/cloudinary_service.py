@@ -59,6 +59,21 @@ async def upload_audio(file: UploadFile) -> Optional[str]:
         return None
 
 
+async def upload_image_bytes(image_bytes: bytes, mime_type: str = "image/jpeg") -> Optional[str]:
+    """
+    Upload raw image bytes to Cloudinary and return the secure URL
+    """
+    try:
+        result = cloudinary.uploader.upload(
+            image_bytes,
+            folder="complaints/images",
+            resource_type="image"
+        )
+        return result.get("secure_url")
+    except Exception as e:
+        print(f"Error uploading image bytes: {e}")
+        return None
+
 async def delete_file(public_id: str, resource_type: str = "image") -> bool:
     """
     Delete a file from Cloudinary
