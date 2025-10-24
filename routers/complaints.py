@@ -11,8 +11,23 @@ from database import get_database
 from services.cloudinary_service import upload_image, upload_audio, upload_image_bytes
 from services.gemini_service import categorize_complaint, categorize_complaint_with_image_bytes
 from services.similarity_service import check_duplicate
+from geopy.geocoders import Nominatim
 
 router = APIRouter(prefix="/api/complaints", tags=["complaints"])
+
+geolocator = Nominatim(user_agent="civic_backend")
+
+async def reverse_geocode(latitude: float, longitude: float):
+    try:
+        location = geolocator.reverse((latitude, longitude), exactly_one=True)
+        if location:
+            return {
+                "address": location.address,
+            }
+        else:
+            return {"error": "No address found for given coordinates"}
+    except Exception as e:
+        return {"error": str(e)}
 
 @router.get("/all")
 async def get_all_complaints():
@@ -92,7 +107,10 @@ async def submit_complaint(
         type="Point",
         coordinates=[longitude, latitude]
     )
-    
+
+    address = await reverse_geocode(latitude, longitude)
+    print(address)
+
     # Check for duplicates
     duplicate_check = await check_duplicate(
         title=title,

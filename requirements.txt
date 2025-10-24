@@ -8,6 +8,8 @@ cloudinary==1.41.0
 colorama==0.4.6
 dnspython==2.7.0
 fastapi==0.119.1
+geographiclib==2.1
+geopy==2.4.1
 google-auth==2.41.1
 google-genai==1.46.0
 h11==0.16.0
