@@ -42,8 +42,6 @@ async def get_all_complaints():
     return {"total": len(submitted_list), "complaints": submitted_list}
 
 
-
-
 @router.post("/submit", response_model=ComplaintResponse)
 async def submit_complaint(
     title: str = Form(...),
@@ -147,6 +145,34 @@ async def submit_complaint(
         priority=priority,
         message="Complaint registered successfully"
     )
+
+
+@router.get("/address/{address}")
+async def get_complaints_by_address(address: str):
+    """
+    Get complaints by address
+    """
+    db = await get_database()
+    complaints_collection = db["complaints"]
+    
+    complaints = await complaints_collection.find({"address": address}).sort("created_at", -1).to_list(length=100)
+
+    submitted_list = []
+    for complaint in complaints:
+            submitted_list.append({
+                "complaint_id": str(complaint["_id"]),
+                "status": complaint.get("status"),
+                "category": complaint.get("category"),
+                "priority": complaint.get("priority"),
+                "title": complaint.get("title"),
+                "description": complaint.get("description"),
+                "created_at": complaint.get("created_at"),
+            })
+
+    if not submitted_list:
+        return {"total": 0, "complaints": []}
+
+    return {"total": len(submitted_list), "complaints": submitted_list}
 
 
 @router.get("/{complaint_id:[0-9a-fA-F]{24}}")
